@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风格 C · 清新简约系</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
+  body { min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f2efe9; padding:32px; }
+  .label { position:fixed; top:20px; left:24px; font-size:14px; color:#a89a92; letter-spacing:2px; }
+  .phone { width:390px; height:820px; border-radius:44px; overflow:hidden; box-shadow:0 24px 64px rgba(190,140,150,.3);
+    border:8px solid #ffffff; background:#fdf8f6; position:relative; }
+
+  .hero { padding:52px 26px 6px; }
+  .hero .hi { font-size:12px; color:#c8a0aa; letter-spacing:1px; }
+  .hero h1 { font-size:24px; color:#5a4a52; margin-top:6px; font-weight:700; }
+  .hero h1 span { color:#f06a9a; }
+  .chips { display:flex; gap:8px; padding:14px 26px 4px; overflow-x:auto; }
+  .chip { flex:none; font-size:11px; padding:6px 14px; border-radius:999px; background:#fff; color:#a8909a;
+    box-shadow:0 2px 8px rgba(220,160,175,.18); border:1px solid #f6e3e8; }
+  .chip.on { background:linear-gradient(120deg,#ff9ebb,#f06a9a); color:#fff; border-color:transparent; font-weight:700; }
+
+  .cal { background:#fff; margin:12px 18px 0; border-radius:26px; padding:18px 16px 12px; box-shadow:0 10px 26px rgba(220,150,170,.16); }
+  .cal-h { display:flex; justify-content:space-between; align-items:center; padding:0 6px 12px; }
+  .cal-h .m { font-size:15px; font-weight:700; color:#5a4a52; }
+  .cal-h .m span { font-size:11px; color:#c8a8b2; font-weight:400; margin-left:5px; }
+  .cal-h .n { color:#e0b8c4; font-size:12px; letter-spacing:5px; }
+  .week, .grid { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; }
+  .week { font-size:10px; color:#d0b4bc; padding-bottom:6px; }
+  .grid { row-gap:2px; }
+  .day { height:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:13px; color:#7a646e; border-radius:50%; position:relative; width:40px; margin:0 auto; }
+  .day.dim { color:#e0cfd4; }
+  .day .dots { display:flex; gap:2px; height:4px; margin-top:2px; }
+  .day .dots i { width:4px; height:4px; border-radius:50%; }
+  .day.today { background:linear-gradient(135deg,#ffb3c8,#f06a9a); color:#fff; font-weight:700; box-shadow:0 6px 14px rgba(240,106,154,.4); }
+  .day.today .dots i { background:#fff !important; }
+
+  .list-h { display:flex; justify-content:space-between; align-items:baseline; padding:16px 28px 0; }
+  .list-h b { font-size:16px; color:#5a4a52; }
+  .list-h b::before { content:"🌸 "; }
+  .list-h span { font-size:11px; color:#c8a8b2; }
+
+  .evt { display:flex; align-items:center; gap:12px; background:#fff; margin:10px 18px 0; padding:13px 16px;
+    border-radius:20px; box-shadow:0 6px 16px rgba(220,150,170,.13); }
+  .evt .ic { width:44px; height:44px; border-radius:16px; flex:none; display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; color:#fff; }
+  .evt .b { flex:1; min-width:0; }
+  .evt .g { font-size:10px; color:#c8a0aa; letter-spacing:1px; }
+  .evt .t { font-size:13px; font-weight:700; color:#5a4a52; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .evt .m { font-size:10px; color:#b0949e; margin-top:3px; }
+  .evt .arrow { flex:none; width:26px; height:26px; border-radius:50%; background:#fdeef2; color:#f06a9a;
+    display:flex; align-items:center; justify-content:center; font-size:12px; }
+
+  .dock { position:absolute; bottom:0; left:0; right:0; height:64px; background:#fff;
+    display:flex; justify-content:space-around; align-items:center; box-shadow:0 -6px 20px rgba(220,150,170,.12); }
+  .dock div { font-size:10px; color:#c8a8b2; text-align:center; }
+  .dock .on { color:#f06a9a; font-weight:700; }
+  .dock i { display:block; font-style:normal; font-size:18px; margin-bottom:2px; }
+</style>
+</head>
+<body>
+<div class="label">风格 C · 清新简约系（日系治愈味）</div>
+<div class="phone">
+  <div class="hero">
+    <div class="hi">7月29日 星期三 · 天气晴</div>
+    <h1>今天有 <span>4</span> 款游戏更新哦</h1>
+  </div>
+
+  <div class="chips">
+    <div class="chip on">全部 6</div>
+    <div class="chip">原神</div>
+    <div class="chip">星穹铁道</div>
+    <div class="chip">明日方舟</div>
+    <div class="chip">鸣潮</div>
+    <div class="chip">＋ 筛选</div>
+  </div>
+
+  <div class="cal">
+    <div class="cal-h">
+      <div class="m">7月 <span>2026</span></div>
+      <div class="n">‹ ›</div>
+    </div>
+    <div class="week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+    <div class="grid">
+      <div class="day dim">29</div><div class="day dim">30</div>
+      <div class="day">1</div><div class="day">2</div>
+      <div class="day">3<div class="dots"><i style="background:#b8a0e8"></i></div></div>
+      <div class="day">4</div><div class="day">5</div>
+      <div class="day">6</div><div class="day">7</div>
+      <div class="day">8<div class="dots"><i style="background:#8ad8b0"></i></div></div>
+      <div class="day">9</div><div class="day">10</div><div class="day">11</div><div class="day">12</div>
+      <div class="day">13</div><div class="day">14</div>
+      <div class="day">15<div class="dots"><i style="background:#f8b86a"></i></div></div>
+      <div class="day">16</div><div class="day">17</div><div class="day">18</div><div class="day">19</div>
+      <div class="day">20</div><div class="day">21</div>
+      <div class="day">22<div class="dots"><i style="background:#8ad8b0"></i></div></div>
+      <div class="day">23</div><div class="day">24</div><div class="day">25</div><div class="day">26</div>
+      <div class="day">27</div>
+      <div class="day">28<div class="dots"><i style="background:#8ad8b0"></i></div></div>
+      <div class="day today">29<div class="dots"><i></i><i></i></div></div>
+      <div class="day">30<div class="dots"><i style="background:#8ad8b0"></i></div></div>
+      <div class="day">31<div class="dots"><i style="background:#f8b86a"></i></div></div>
+      <div class="day dim">1</div><div class="day dim">2</div>
+    </div>
+  </div>
+
+  <div class="list-h"><b>今日更新</b><span>4 条</span></div>
+
+  <div class="evt">
+    <div class="ic" style="background:linear-gradient(135deg,#7ab8f0,#4a8ad8)">原</div>
+    <div class="b">
+      <div class="g">原神</div>
+      <div class="t">5.8 版本更新 · 维护 06:00-11:00</div>
+      <div class="m">补偿 600 原石</div>
+    </div>
+    <div class="arrow">›</div>
+  </div>
+  <div class="evt">
+    <div class="ic" style="background:linear-gradient(135deg,#c8a8f0,#9a6ad8)">铁</div>
+    <div class="b">
+      <div class="g">崩坏：星穹铁道</div>
+      <div class="t">卡池轮换 ·「流萤」UP 12:00 开启</div>
+      <div class="m">持续至 8月19日</div>
+    </div>
+    <div class="arrow">›</div>
+  </div>
+  <div class="evt">
+    <div class="ic" style="background:linear-gradient(135deg,#f8b078,#e8823a)">舟</div>
+    <div class="b">
+      <div class="g">明日方舟</div>
+      <div class="t">「火山旅梦」复刻 16:00 开启</div>
+      <div class="m">新增时装 3 款</div>
+    </div>
+    <div class="arrow">›</div>
+  </div>
+  <div class="evt">
+    <div class="ic" style="background:linear-gradient(135deg,#6ad8c0,#38b0a0)">鸣</div>
+    <div class="b">
+      <div class="g">鸣潮</div>
+      <div class="t">2.6 维护预告 · 明日 06:00 开始</div>
+      <div class="m">新区域「黎那汐塔」开放</div>
+    </div>
+    <div class="arrow">›</div>
+  </div>
+
+  <div class="dock">
+    <div class="on"><i>🌸</i>日历</div>
+    <div><i>🎀</i>游戏</div>
+    <div><i>🍡</i>设置</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风格 A · 明亮幻想系</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
+  body { min-height:100vh; display:flex; align-items:center; justify-content:center; gap:32px; background:#e8e4f3; padding:32px; flex-wrap:wrap; }
+  .label { position:fixed; top:20px; left:24px; font-size:14px; color:#6b6390; letter-spacing:2px; }
+  .phone { width:390px; height:820px; border-radius:44px; overflow:hidden; box-shadow:0 24px 64px rgba(90,70,160,.35); border:8px solid #2b2440;
+    background:linear-gradient(165deg,#8fb8e8 0%,#b8a8e0 42%,#e8c8e0 78%,#f8dcc8 100%); position:relative; }
+  /* 星光装饰 */
+  .star { position:absolute; color:rgba(255,255,255,.9); font-size:12px; animation:tw 2.6s infinite ease-in-out; }
+  @keyframes tw { 0%,100%{opacity:.25} 50%{opacity:.95} }
+
+  .hero { padding:56px 24px 14px; color:#fff; position:relative; }
+  .hero .date { font-size:13px; letter-spacing:4px; opacity:.85; }
+  .hero h1 { font-size:30px; margin-top:6px; text-shadow:0 2px 10px rgba(80,60,140,.45); letter-spacing:2px; }
+  .hero h1 em { font-style:normal; color:#ffe9b0; }
+  .hero .sub { margin-top:8px; font-size:12px; opacity:.85; }
+
+  .card { background:rgba(255,255,255,.88); backdrop-filter:blur(8px); border-radius:22px; margin:10px 16px; padding:16px 18px;
+    box-shadow:0 8px 22px rgba(90,70,160,.18); border:1px solid rgba(255,255,255,.7); }
+  .cal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .cal-head .month { font-size:17px; font-weight:700; color:#5a4a8a; letter-spacing:1px; }
+  .cal-head .month span { font-size:11px; color:#a08cc0; font-weight:400; margin-left:6px; }
+  .cal-head .nav { color:#b09ad0; font-size:13px; letter-spacing:6px; }
+  .week, .grid { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; }
+  .week { font-size:11px; color:#a896c8; margin-bottom:6px; }
+  .grid { row-gap:4px; }
+  .day { height:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:13px; color:#5a4f78; border-radius:12px; position:relative; }
+  .day.dim { color:#c8bedd; }
+  .day .dots { display:flex; gap:2px; height:5px; margin-top:2px; }
+  .day .dots i { width:5px; height:5px; border-radius:50%; }
+  .day.today { background:linear-gradient(140deg,#ffd98a,#f8a8c8); color:#7a4a10; font-weight:700; box-shadow:0 4px 12px rgba(240,160,120,.5); }
+
+  .sec-title { display:flex; align-items:baseline; gap:8px; margin:16px 24px 2px; color:#fff; text-shadow:0 1px 6px rgba(80,60,140,.5); }
+  .sec-title b { font-size:17px; letter-spacing:2px; }
+  .sec-title span { font-size:11px; opacity:.85; }
+
+  .evt { display:flex; gap:12px; align-items:flex-start; padding:13px 0; border-bottom:1px dashed rgba(140,110,190,.25); }
+  .evt:last-child { border-bottom:none; }
+  .icon { width:46px; height:46px; border-radius:14px; flex:none; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; font-size:15px; box-shadow:0 4px 10px rgba(90,70,160,.3); }
+  .evt .body { flex:1; min-width:0; }
+  .evt .game { font-size:11px; color:#9a86c0; letter-spacing:1px; }
+  .evt .ttl { font-size:14px; font-weight:700; color:#4a3c70; margin-top:2px; }
+  .evt .meta { font-size:11px; color:#8a7aa8; margin-top:4px; }
+  .tag { flex:none; font-size:10px; padding:4px 9px; border-radius:999px; font-weight:700; letter-spacing:1px; }
+  .t-ver { background:linear-gradient(120deg,#ffe1a0,#ffc46a); color:#8a5a10; }
+  .t-pool { background:linear-gradient(120deg,#e6ccff,#c99bf0); color:#6a3a9a; }
+  .t-act { background:linear-gradient(120deg,#ffd0dc,#f89ab8); color:#9a2a55; }
+
+  .dock { position:absolute; bottom:0; left:0; right:0; height:66px; background:rgba(255,255,255,.8); backdrop-filter:blur(10px);
+    display:flex; justify-content:space-around; align-items:center; border-top:1px solid rgba(255,255,255,.8); }
+  .dock div { font-size:11px; color:#a08cc0; text-align:center; }
+  .dock .on { color:#7a5ac8; font-weight:700; }
+  .dock i { display:block; font-style:normal; font-size:19px; margin-bottom:2px; }
+</style>
+</head>
+<body>
+<div class="label">风格 A · 明亮幻想系（原神 / 崩铁味）</div>
+<div class="phone">
+  <span class="star" style="top:70px;right:36px">✦</span>
+  <span class="star" style="top:120px;left:26px;animation-delay:.8s">✧</span>
+  <span class="star" style="top:44px;left:45%;animation-delay:1.6s">✦</span>
+
+  <div class="hero">
+    <div class="date">7月29日 · 星期三</div>
+    <h1>二游<em>日历</em></h1>
+    <div class="sub">今日 4 款游戏有更新 · 愿星辰指引你的卡池 ✦</div>
+  </div>
+
+  <div class="card">
+    <div class="cal-head">
+      <div class="month">2026 · 07<span>七月</span></div>
+      <div class="nav">‹ ›</div>
+    </div>
+    <div class="week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+    <div class="grid">
+      <div class="day dim">29</div><div class="day dim">30</div>
+      <div class="day">1</div><div class="day">2</div>
+      <div class="day">3<div class="dots"><i style="background:#b08ae0"></i></div></div>
+      <div class="day">4</div><div class="day">5</div>
+      <div class="day">6</div><div class="day">7</div>
+      <div class="day">8<div class="dots"><i style="background:#f89ab8"></i></div></div>
+      <div class="day">9</div><div class="day">10</div><div class="day">11</div><div class="day">12</div>
+      <div class="day">13</div><div class="day">14</div>
+      <div class="day">15<div class="dots"><i style="background:#ffc46a"></i></div></div>
+      <div class="day">16</div><div class="day">17</div><div class="day">18</div><div class="day">19</div>
+      <div class="day">20</div><div class="day">21</div>
+      <div class="day">22<div class="dots"><i style="background:#6ad8c8"></i></div></div>
+      <div class="day">23</div><div class="day">24</div><div class="day">25</div><div class="day">26</div>
+      <div class="day">27</div>
+      <div class="day">28<div class="dots"><i style="background:#f89ab8"></i></div></div>
+      <div class="day today">29<div class="dots"><i style="background:#fff"></i><i style="background:#fff"></i></div></div>
+      <div class="day">30<div class="dots"><i style="background:#f89ab8"></i></div></div>
+      <div class="day">31<div class="dots"><i style="background:#ffc46a"></i></div></div>
+      <div class="day dim">1</div><div class="day dim">2</div>
+    </div>
+  </div>
+
+  <div class="sec-title"><b>今日更新</b><span>7月29日 · 4 条</span></div>
+  <div class="card" style="padding-top:2px">
+    <div class="evt">
+      <div class="icon" style="background:linear-gradient(140deg,#5aa8e8,#3a78c8)">原</div>
+      <div class="body">
+        <div class="game">原神 Genshin</div>
+        <div class="ttl">5.8 版本「绘夏？烈日？度假村！」更新</div>
+        <div class="meta">维护 06:00 - 11:00 · 补偿 600 原石</div>
+      </div>
+      <div class="tag t-ver">版本</div>
+    </div>
+    <div class="evt">
+      <div class="icon" style="background:linear-gradient(140deg,#9a7ae0,#6a4ab8)">铁</div>
+      <div class="body">
+        <div class="game">崩坏：星穹铁道</div>
+        <div class="ttl">卡池轮换 ·「流萤」限时 UP 开启</div>
+        <div class="meta">12:00 开启 · 持续至 8月19日</div>
+      </div>
+      <div class="tag t-pool">卡池</div>
+    </div>
+    <div class="evt">
+      <div class="icon" style="background:linear-gradient(140deg,#f0945a,#d86a2a)">舟</div>
+      <div class="body">
+        <div class="game">明日方舟</div>
+        <div class="ttl">SideStory「火山旅梦」复刻开启</div>
+        <div class="meta">16:00 开启 · 新增时装 3 款</div>
+      </div>
+      <div class="tag t-act">活动</div>
+    </div>
+    <div class="evt">
+      <div class="icon" style="background:linear-gradient(140deg,#3ec8b8,#1a9a8a)">鸣</div>
+      <div class="body">
+        <div class="game">鸣潮</div>
+        <div class="ttl">2.6 版本维护预告 · 明日 06:00 开始</div>
+        <div class="meta">预计 5 小时 · 新区域「黎那汐塔」开放</div>
+      </div>
+      <div class="tag t-ver">版本</div>
+    </div>
+  </div>
+
+  <div class="dock">
+    <div class="on"><i>📅</i>日历</div>
+    <div><i>🎮</i>游戏</div>
+    <div><i>⚙️</i>设置</div>
+  </div>
+</div>
+</body>
+</html>
