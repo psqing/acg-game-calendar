@@ -1,6 +1,6 @@
 # acg_calendar
 
-A new Flutter project.
+因为做这个APP的初衷只是为了自己用一下看一下各个游戏的公告，所以没有接入大模型，所以日期可能会识别不准。
 
 ## Getting Started
 
