@@ -55,6 +55,121 @@ DateTime _resolveDate(int month, int day) {
   return DateTime(year, month, day);
 }
 
+/// 候选日期（带打分，用于挑「活动开始时间」）
+class _DateCandidate {
+  final DateTime date;
+  final int score;
+  _DateCandidate(this.date, this.score);
+}
+
+/// 把 M月D日 / M-D / M/D 这类「无年份」日期，按参考日期（发布日）推断年份：
+/// 若候选日早于发布日，但差距不超过 45 天（即「晚发公告」），仍视为今年；
+/// 否则（明显属于上一年度）视为次年。
+DateTime _resolveActivityDate(int month, int day, DateTime ref) {
+  var year = ref.year;
+  final candidate = DateTime(year, month, day);
+  if (candidate.isBefore(ref) && ref.difference(candidate).inDays > 45) {
+    year += 1;
+  }
+  return DateTime(year, month, day);
+}
+
+/// 活动开始时间抽取用的正则（模块级，避免重复编译）
+final _activityLabelRe = RegExp(
+  r'(?:活动(?:开启)?时间|开放时间|开启时间)\s*[:：]?\s*(\d{4})[-年/](\d{1,2})[-月](\d{1,2})日?'
+  r'|(?:活动(?:开启)?时间|开放时间|开启时间)\s*[:：]?\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日?',
+);
+/// 时间段：「DATE1 分隔符 DATE2」区间，取起始日 DATE1。
+/// 例如「7月22日维护后-8月11日23:59」「2026-08-01 至 2026-08-15」。
+final _activityRangeRe = RegExp(
+  r'(?:(\d{4})[-年/](\d{1,2})[-月](\d{1,2})日?|(\d{1,2})\s*月\s*(\d{1,2})\s*日?)'
+  r'[\s\S]{0,16}?'
+  r'(?:[-~–—至到])'
+  r'[\s\S]{0,16}?'
+  r'(?:\d{4}[-年/]\d{1,2}[-月]\d{1,2}日?|\d{1,2}\s*月\s*\d{1,2}\s*日?)',
+);
+/// 模糊起始：区间起始是「版本更新后 / 维护后」等且无明确日期，如「1.2版本更新后~2026年…」
+final _activityVagueRe = RegExp(
+  r'(版本更新后|更新后|维护后|开服后|上线后|版本更新)\s*[-~–—至到]',
+);
+/// 通用日期 token（YYYY-MM-DD / YYYY年M月D日 / M月D日）
+final _dateTokenRe = RegExp(
+  r'(\d{4})[-年/](\d{1,2})[-月](\d{1,2})日?|(\d{1,2})\s*月\s*(\d{1,2})\s*日?',
+);
+
+/// 把 _dateTokenRe 的匹配解析为 DateTime
+/// （group1-3 = YYYY-MM-DD，group4-5 = M月D日）
+DateTime _parseDateToken(RegExpMatch m, DateTime publish) {
+  if (m.group(1) != null) {
+    return DateTime(
+        int.parse(m.group(1)!), int.parse(m.group(2)!), int.parse(m.group(3)!));
+  }
+  return _resolveActivityDate(
+      int.parse(m.group(4)!), int.parse(m.group(5)!), publish);
+}
+
+/// 从公告文本中提取「活动/版本/卡池的开始时间」，供日历按活动日标记。
+/// 找不到可靠活动日时返回 null（调用方回退到发布日）。
+///
+/// 策略：
+/// 1. 高置信度：先匹配「活动时间 / 开放时间 / 开启时间：M月D日」直接作为开始日；
+/// 2. 时间段：识别「DATE1 分隔符 DATE2」区间（如「7月22日维护后-8月11日」），取起始日 DATE1
+///    —— 避免被结束日（如 8月11日）覆盖；
+/// 3. 模糊起始：若区间起始是「版本更新后 / 维护后」等且前面无任何明确日期
+///    （如「1.2版本更新后~2026年…」），视为起始日不明确，返回 null（落到发布日）；
+/// 4. 通用兜底：收集正文所有日期，按上下文打分取发布日之后、180 天内最像“开始”的日期。
+DateTime? extractActivityDate(String text, DateTime publish) {
+  if (text.isEmpty) return null;
+
+  // 1) 高置信度：活动时间 / 开放时间 / 开启时间（直接给出开始日）
+  final lm = _activityLabelRe.firstMatch(text);
+  if (lm != null) {
+    final d = _parseDateToken(lm, publish);
+    if (d.isAtSameMomentAs(publish) || d.isAfter(publish)) return d;
+  }
+
+  // 2) 时间段：取起始日 DATE1（覆盖「7月22日维护后-8月11日」这类）
+  final rm = _activityRangeRe.firstMatch(text);
+  if (rm != null) {
+    return _parseDateToken(rm, publish);
+  }
+
+  // 3) 模糊起始：起始时间无明确日期（如「1.2版本更新后~2026年…」）→ 用发布日
+  final vm = _activityVagueRe.firstMatch(text);
+  if (vm != null && !_dateTokenRe.hasMatch(text.substring(0, vm.start))) {
+    return null;
+  }
+
+  // 4) 通用候选收集 + 打分
+  final candidates = <_DateCandidate>[];
+  for (final m in _dateTokenRe.allMatches(text)) {
+    final dt = _parseDateToken(m, publish);
+    var score = 0;
+    final end = m.end;
+    final winEnd = end + 20 > text.length ? text.length : end + 20;
+    final window = text.substring(end, winEnd);
+    if (RegExp(r'活动开启|开启|开放|上线|开服|版本更新|版本|复刻|新版本|卡池|祈愿|跃迁|调频|共鸣|前瞻').hasMatch(window)) {
+      score += 2;
+    }
+    if (RegExp(r'维护|停服|闪断|例行').hasMatch(window)) score -= 1;
+    final beforeStart = end - 14 < 0 ? 0 : end - 14;
+    final before = text.substring(beforeStart, end);
+    if (RegExp(r'活动时间|开放时间|开启时间').hasMatch(before)) score += 1;
+    candidates.add(_DateCandidate(dt, score));
+  }
+  final future = candidates
+      .where((c) =>
+          c.date.isAfter(publish) &&
+          c.date.difference(publish).inDays <= 180)
+      .toList();
+  if (future.isEmpty) return null;
+  future.sort((a, b) {
+    if (a.score != b.score) return b.score.compareTo(a.score);
+    return a.date.compareTo(b.date);
+  });
+  return future.first.date;
+}
+
 /// 从 HTML 内容里提取第一张图片
 String? firstImg(String html) {
   final m = RegExp(r'''<img[^>]+src=["']([^"']+)''').firstMatch(html);
@@ -114,6 +229,7 @@ class MiyousheSource implements GameSource {
       final content = (post['content'] as String? ?? '');
       final plain = cleanText(content);
       final summary = plain.length > 80 ? '${plain.substring(0, 80)}…' : plain;
+      final activityText = '$subject $plain';
       final created = post['created_at'];
       final postDate = created is int
           ? DateTime.fromMillisecondsSinceEpoch(created * 1000)
@@ -123,10 +239,11 @@ class MiyousheSource implements GameSource {
       final slug = game.miyousheSlug ?? 'ys';
       events.add(UpdateEvent(
         gameId: game.id,
-        type: classify('$subject $plain'),
+        type: classify(activityText),
         title: cleanText(subject),
         summary: summary,
-        date: extractDate('$subject $plain') ?? postDate,
+        date: extractDate(activityText) ?? postDate,
+        activityDate: extractActivityDate(activityText, postDate),
         url: 'https://www.miyoushe.com/$slug/article/${post['post_id']}',
         cover: cover,
       ));
@@ -155,12 +272,14 @@ class OfficialWebSource implements GameSource {
       final fullUrl = href.startsWith('http')
           ? href
           : Uri.parse(url).resolve(href).toString();
+      final publish = extractDate(title) ?? DateTime.now();
       events.add(UpdateEvent(
         gameId: game.id,
         type: classify(title),
         title: cleanText(title),
         summary: '',
-        date: extractDate(title) ?? DateTime.now(),
+        date: publish,
+        activityDate: extractActivityDate(title, publish),
         url: fullUrl,
       ));
       if (events.length >= 20) break;
@@ -209,14 +328,16 @@ class ArknightsSource implements GameSource {
       final cid = m.namedGroup('cid')!;
       final ts = int.tryParse(m.namedGroup('ts')!) ?? 0;
       final brief = cleanText(m.namedGroup('brief')!);
+      final publish = ts > 0
+          ? DateTime.fromMillisecondsSinceEpoch(ts * 1000)
+          : (extractDate(title) ?? DateTime.now());
       events.add(UpdateEvent(
         gameId: game.id,
         type: classify('$title $brief'),
         title: title,
         summary: brief.length > 80 ? '${brief.substring(0, 80)}…' : brief,
-        date: ts > 0
-            ? DateTime.fromMillisecondsSinceEpoch(ts * 1000)
-            : (extractDate(title) ?? DateTime.now()),
+        date: publish,
+        activityDate: extractActivityDate('$title $brief', publish),
         url: 'https://ak.hypergryph.com/news/$cid',
         cover: coverMap[title],
       ));
@@ -267,6 +388,7 @@ class KuroCmsSource implements GameSource {
         title: title,
         summary: content.length > 80 ? '${content.substring(0, 80)}…' : content,
         date: date,
+        activityDate: extractActivityDate('$title $content', date),
         url: id != null
             ? detailBase.replaceAll('{id}', id.toString())
             : null,
@@ -311,25 +433,32 @@ class YihuanSource implements GameSource {
       });
       if (items.length >= 30) break;
     }
-    // 列表页不含头图，抓取前几条详情页提取 banner 作为封面
+    // 列表页不含头图，抓取前几条详情页提取 banner 作为封面 + 活动开始时间
     final top = items.take(6).toList();
     await Future.wait(top.map((item) async {
       try {
         final d = await _dio.get(item['url'] as String);
         final ddoc = html_parser.parse(d.data.toString());
         item['cover'] = firstImgFromHtml(ddoc);
+        final dtext = ddoc.body?.text ?? '';
+        item['activityDate'] =
+            extractActivityDate('${item['title']} $dtext', item['date'] as DateTime);
       } catch (_) {
         item['cover'] = null;
       }
     }));
     return items.map((item) {
       final des = item['des'] as String;
+      final title = item['title'] as String;
+      final publish = item['date'] as DateTime;
       return UpdateEvent(
         gameId: game.id,
-        type: classify('${item['title']} $des'),
-        title: item['title'] as String,
+        type: classify('$title $des'),
+        title: title,
         summary: des.length > 80 ? '${des.substring(0, 80)}…' : des,
-        date: item['date'] as DateTime,
+        date: publish,
+        activityDate: (item['activityDate'] as DateTime?) ??
+            extractActivityDate('$title $des', publish),
         url: item['url'] as String,
         cover: item['cover'] as String?,
       );
@@ -376,6 +505,7 @@ class GamekeeSource implements GameSource {
         title: title,
         summary: summary.length > 80 ? '${summary.substring(0, 80)}…' : summary,
         date: date,
+        activityDate: extractActivityDate('$title $summary', date),
         url: id != null ? detailBase.replaceAll('{id}', id.toString()) : null,
       ));
       if (events.length >= 20) break;

@@ -74,7 +74,8 @@ final eventsByDayProvider =
   return async.whenData((events) {
     final map = <DateTime, List<UpdateEvent>>{};
     for (final e in events) {
-      final day = DateTime(e.date.year, e.date.month, e.date.day);
+      final d = e.effectiveDate;
+      final day = DateTime(d.year, d.month, d.day);
       map.putIfAbsent(day, () => []).add(e);
     }
     return map;

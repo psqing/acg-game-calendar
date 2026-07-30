@@ -46,7 +46,8 @@ class UpdateEvent {
   final EventType type;
   final String title;
   final String summary;
-  final DateTime date; // 事件发生的日期（从正文推断，失败则为发布日期）
+  final DateTime date; // 公告发布日期（兜底标记用）
+  final DateTime? activityDate; // 活动/版本/卡池开始时间；非空时日历按此标记
   final String? url;
   final String? cover;
 
@@ -56,9 +57,13 @@ class UpdateEvent {
     required this.title,
     required this.summary,
     required this.date,
+    this.activityDate,
     this.url,
     this.cover,
   });
+
+  /// 日历与当日列表实际使用的日期：优先活动开始时间
+  DateTime get effectiveDate => activityDate ?? date;
 
   Map<String, dynamic> toJson() => {
         'gameId': gameId,
@@ -66,6 +71,7 @@ class UpdateEvent {
         'title': title,
         'summary': summary,
         'date': date.millisecondsSinceEpoch,
+        'activityDate': activityDate?.millisecondsSinceEpoch,
         'url': url,
         'cover': cover,
       };
@@ -76,6 +82,9 @@ class UpdateEvent {
         title: j['title'] as String,
         summary: j['summary'] as String? ?? '',
         date: DateTime.fromMillisecondsSinceEpoch(j['date'] as int),
+        activityDate: j['activityDate'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(j['activityDate'] as int),
         url: j['url'] as String?,
         cover: j['cover'] as String?,
       );

@@ -172,6 +172,23 @@ class EventCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (event.activityDate != null &&
+                        (event.activityDate!.year != event.date.year ||
+                            event.activityDate!.month != event.date.month ||
+                            event.activityDate!.day != event.date.day)) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        '公告于 ${event.date.month}月${event.date.day}日',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withOpacity(0.55),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
