@@ -72,7 +72,7 @@ class GameDetailPage extends ConsumerWidget {
               itemCount: mine.length,
               itemBuilder: (context, i) => EventCard(
                 mine[i],
-                onTap: () => openLink(mine[i].url),
+                onTap: () => openLink(context, mine[i].url),
               ),
             );
           },
@@ -121,24 +121,36 @@ class GameDetailPage extends ConsumerWidget {
       fit: StackFit.expand,
       children: [
         gradient,
-        if (icon != null)
-          Center(
-            child: CachedNetworkImage(
-              imageUrl: icon,
-              width: 96,
-              height: 96,
-              fit: BoxFit.cover,
-              errorWidget: (_, __, ___) => Text(game.mascot,
-                  style: const TextStyle(
-                      fontSize: 72, color: Colors.white70)),
-            ),
-          )
-        else
-          Center(
-            child: Text(game.mascot,
-                style: TextStyle(
-                    fontSize: 72, color: Colors.white.withOpacity(0.45))),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null)
+                CachedNetworkImage(
+                  imageUrl: icon,
+                  width: 110,
+                  height: 110,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Text(game.mascot,
+                      style: const TextStyle(fontSize: 72, color: Colors.white70)),
+                )
+              else
+                Text(game.mascot,
+                    style: TextStyle(
+                        fontSize: 72, color: Colors.white.withOpacity(0.45))),
+              const SizedBox(height: 12),
+              Text(
+                game.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  shadows: [Shadow(blurRadius: 8, color: Colors.black54)],
+                ),
+              ),
+            ],
           ),
+        ),
       ],
     );
   }

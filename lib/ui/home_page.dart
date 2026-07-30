@@ -326,7 +326,7 @@ class _GroupedDayEventsState extends ConsumerState<GroupedDayEvents> {
               (e) => InkWell(
                 onTap: () async {
                   // 优先打开公告原文；无链接则进游戏详情页
-                  final ok = await openLink(e.url);
+                  final ok = await openLink(context, e.url);
                   if (!ok && context.mounted) {
                     Navigator.push(
                       context,

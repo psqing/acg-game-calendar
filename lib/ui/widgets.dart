@@ -4,10 +4,20 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models.dart';
 import '../data/games.dart';
+import 'webview_page.dart';
 
-/// 打开公告原文链接（外部浏览器）
-Future<bool> openLink(String? url) async {
+/// 打开公告原文链接（应用内 WebView，不再跳转外部浏览器）
+Future<bool> openLink(BuildContext context, String? url) async {
   if (url == null || url.isEmpty) return false;
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => WebviewPage(url: url)),
+  );
+  return true;
+}
+
+/// 兜底：用系统浏览器打开（Webview 内的「用浏览器打开」按钮使用）
+Future<bool> openLinkExternal(String url) async {
   try {
     return await launchUrl(Uri.parse(url),
         mode: LaunchMode.externalApplication);

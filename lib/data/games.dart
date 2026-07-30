@@ -56,7 +56,9 @@ class GameRegistry {
       primaryColor: 0xFFE8762C,
       secondaryColor: 0xFFF8B060,
       officialNewsUrl: 'https://ak.hypergryph.com/news',
-      // 官网只有 .ico（Flutter 无法解码），暂用汉字块
+      // 官方品牌图（web.hycdn.cn，PNG 可直接解码）
+      iconUrl:
+          'https://web.hycdn.cn/arknights/official/_next/static/media/amiya.a410de75.png',
       mascot: '🛡️',
     ),
     Game(

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models.dart';
@@ -60,6 +61,31 @@ String? firstImg(String html) {
   return m?.group(1);
 }
 
+/// 清洗文本：去 HTML 标签、解码实体、还原被二次转义的换行(//n //t //r 等)、折叠空白。
+/// 用于库洛/方舟等正文中残留的「前端标签 + 乱码 + 转义换行」。
+String cleanText(String raw) {
+  if (raw.isEmpty) return raw;
+  var s = html_parser.parse(raw).body?.text ?? raw;
+  // 方舟 SSR 中的 //n 等二次转义换行
+  s = s.replaceAll('//n', ' ').replaceAll('//r', ' ').replaceAll('//t', ' ');
+  // 常规反斜杠转义（兜底）
+  s = s.replaceAll('\\n', ' ').replaceAll('\\t', ' ').replaceAll('\\r', ' ');
+  s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return s;
+}
+
+/// 从已解析的 HTML 文档提取第一张「内容图」（优先含 resources/ 的 banner 图）
+String? firstImgFromHtml(Document doc) {
+  String? fallback;
+  for (final img in doc.querySelectorAll('img')) {
+    final src = img.attributes['src']?.trim();
+    if (src == null || src.isEmpty || src.startsWith('data:')) continue;
+    if (src.contains('resources/')) return src;
+    fallback ??= src;
+  }
+  return fallback;
+}
+
 /// 米游社官方分区帖子（实测可用 2026-07）
 /// GET https://bbs-api.miyoushe.com/post/wapi/getForumPostList?forum_id={id}&is_hot=false&page_size=30&sort_type=1
 class MiyousheSource implements GameSource {
@@ -86,8 +112,7 @@ class MiyousheSource implements GameSource {
       final subject = (post['subject'] as String? ?? '').trim();
       if (subject.isEmpty) continue;
       final content = (post['content'] as String? ?? '');
-      final plain =
-          content.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+      final plain = cleanText(content);
       final summary = plain.length > 80 ? '${plain.substring(0, 80)}…' : plain;
       final created = post['created_at'];
       final postDate = created is int
@@ -99,7 +124,7 @@ class MiyousheSource implements GameSource {
       events.add(UpdateEvent(
         gameId: game.id,
         type: classify('$subject $plain'),
-        title: subject,
+        title: cleanText(subject),
         summary: summary,
         date: extractDate('$subject $plain') ?? postDate,
         url: 'https://www.miyoushe.com/$slug/article/${post['post_id']}',
@@ -133,7 +158,7 @@ class OfficialWebSource implements GameSource {
       events.add(UpdateEvent(
         gameId: game.id,
         type: classify(title),
-        title: title,
+        title: cleanText(title),
         summary: '',
         date: extractDate(title) ?? DateTime.now(),
         url: fullUrl,
@@ -179,11 +204,11 @@ class ArknightsSource implements GameSource {
       if (cover.isNotEmpty) coverMap[title] = cover;
     }
     for (final m in _itemRe.allMatches(body)) {
-      final title = m.namedGroup('title')!.trim();
+      final title = cleanText(m.namedGroup('title')!);
       if (title.length < 4 || !seen.add(title)) continue;
       final cid = m.namedGroup('cid')!;
       final ts = int.tryParse(m.namedGroup('ts')!) ?? 0;
-      final brief = m.namedGroup('brief')!.trim();
+      final brief = cleanText(m.namedGroup('brief')!);
       events.add(UpdateEvent(
         gameId: game.id,
         type: classify('$title $brief'),
@@ -220,7 +245,7 @@ class KuroCmsSource implements GameSource {
     final seen = <String>{};
     for (final item in data) {
       if (item is! Map) continue;
-      final title = (item['articleTitle'] as String? ?? '').trim();
+      final title = cleanText(item['articleTitle'] as String? ?? '');
       if (title.length < 4 || !seen.add(title)) continue;
       final id = item['articleId'];
       final startTime = item['startTime'] as String? ?? '';
@@ -230,11 +255,12 @@ class KuroCmsSource implements GameSource {
               int.parse(m.group(3)!))
           : (extractDate(title) ?? DateTime.now());
       final rawContent = item['articleContent'] as String? ?? '';
-      final content = rawContent
-          .replaceAll(RegExp(r'<[^>]*>'), ' ')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
-      final cover = (item['articleCover'] as String?) ?? '';
+      final content = cleanText(rawContent);
+      final rawCover =
+          (item['articleCover'] as String?) ?? (item['suggestCover'] as String?) ?? '';
+      final cover = rawCover.isNotEmpty
+          ? rawCover
+          : firstImgFromHtml(html_parser.parse(rawContent));
       events.add(UpdateEvent(
         gameId: game.id,
         type: classify('$title $content'),
@@ -244,7 +270,7 @@ class KuroCmsSource implements GameSource {
         url: id != null
             ? detailBase.replaceAll('{id}', id.toString())
             : null,
-        cover: cover.isNotEmpty ? cover : firstImg(rawContent),
+        cover: cover,
       ));
       if (events.length >= 30) break;
     }
@@ -261,33 +287,53 @@ class YihuanSource implements GameSource {
   Future<List<UpdateEvent>> fetch(Game game) async {
     final resp = await _dio.get('$_base/m/news/');
     final doc = html_parser.parse(resp.data.toString());
-    final events = <UpdateEvent>[];
+    final items = <Map<String, dynamic>>[];
     final seen = <String>{};
     for (final a in doc.querySelectorAll('a')) {
       final href = a.attributes['href'] ?? '';
       if (!RegExp(r'/m/news/[a-z]+/\d{8}/\d+\.html').hasMatch(href)) continue;
       final titleEl = a.querySelector('h2.title') ?? a.querySelector('.title');
-      final title = (titleEl?.text ?? a.text).trim().replaceAll(RegExp(r'\s+'), ' ');
+      final title = cleanText(titleEl?.text ?? a.text);
       if (title.length < 4 || !seen.add(title)) continue;
-      final des = a.querySelector('.des')?.text.trim() ?? '';
+      final des = cleanText(a.querySelector('.des')?.text.trim() ?? '');
       final dateStr = a.querySelector('.date')?.text.trim() ?? '';
       final dm = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(dateStr);
-      final img = a.querySelector('img')?.attributes['src'];
-      events.add(UpdateEvent(
-        gameId: game.id,
-        type: classify('$title $des'),
-        title: title,
-        summary: des.length > 80 ? '${des.substring(0, 80)}…' : des,
-        date: dm != null
+      final url = href.startsWith('http') ? href : '$_base$href';
+      items.add({
+        'title': title,
+        'des': des,
+        'date': dm != null
             ? DateTime(int.parse(dm.group(1)!), int.parse(dm.group(2)!),
                 int.parse(dm.group(3)!))
             : (extractDate('$title $des') ?? DateTime.now()),
-        url: href.startsWith('http') ? href : '$_base$href',
-        cover: img,
-      ));
-      if (events.length >= 30) break;
+        'url': url,
+        'cover': null,
+      });
+      if (items.length >= 30) break;
     }
-    return events;
+    // 列表页不含头图，抓取前几条详情页提取 banner 作为封面
+    final top = items.take(6).toList();
+    await Future.wait(top.map((item) async {
+      try {
+        final d = await _dio.get(item['url'] as String);
+        final ddoc = html_parser.parse(d.data.toString());
+        item['cover'] = firstImgFromHtml(ddoc);
+      } catch (_) {
+        item['cover'] = null;
+      }
+    }));
+    return items.map((item) {
+      final des = item['des'] as String;
+      return UpdateEvent(
+        gameId: game.id,
+        type: classify('${item['title']} $des'),
+        title: item['title'] as String,
+        summary: des.length > 80 ? '${des.substring(0, 80)}…' : des,
+        date: item['date'] as DateTime,
+        url: item['url'] as String,
+        cover: item['cover'] as String?,
+      );
+    }).toList();
   }
 }
 
@@ -316,17 +362,14 @@ class GamekeeSource implements GameSource {
     final events = <UpdateEvent>[];
     for (final item in list) {
       if (item is! Map) continue;
-      final title = (item['title'] as String? ?? '').trim();
+      final title = cleanText(item['title'] as String? ?? '');
       if (title.length < 4) continue;
       final id = item['id'];
       final created = item['created_at'];
       final date = created is int
           ? DateTime.fromMillisecondsSinceEpoch(created * 1000)
           : (extractDate(title) ?? DateTime.now());
-      final summary = (item['summary'] as String? ?? '')
-          .replaceAll(RegExp(r'<[^>]*>'), ' ')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
+      final summary = cleanText(item['summary'] as String? ?? '');
       events.add(UpdateEvent(
         gameId: game.id,
         type: classify('$title $summary'),
@@ -392,7 +435,7 @@ GameSource sourceFor(Game game) {
     case 'nikke':
       return GamekeeSource(
         alias: 'nikke',
-        detailBase: 'https://www.gamekee.com/nikke/{id}',
+        detailBase: 'https://www.gamekee.com/nikke/{id}.html',
       );
   }
   if (game.miyousheForumId != null) return MiyousheSource();
